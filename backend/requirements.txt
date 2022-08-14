@@ -1,3 +1,5 @@
-django==4.1
+django==3.2.15
 djangorestframework==3.13.1
 python-dotenv==0.20.0
+djoser==2.1.0
+Pillow==9.2.0

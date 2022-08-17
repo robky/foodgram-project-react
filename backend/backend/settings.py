@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "rest_framework",
     'rest_framework.authtoken',
     'api.apps.ApiConfig',
+    'core.apps.CoreConfig',
     'foods.apps.FoodsConfig',
     'users.apps.UsersConfig',
 ]

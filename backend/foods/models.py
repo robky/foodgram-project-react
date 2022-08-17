@@ -59,7 +59,7 @@ class Recipe(models.Model):
         verbose_name_plural = "Рецепты"
 
     def __str__(self):
-        return self.name
+        return f'{self.name} - {self.author}'
 
 
 class IngredientRecipe(models.Model):
@@ -125,7 +125,7 @@ class Favorite(models.Model):
 
     class Meta:
         verbose_name = "Избранное"
-        verbose_name_plural = "Избранные"
+        verbose_name_plural = "Избранное"
 
     def __str__(self):
         return f'{self.user} - {self.recipe}'

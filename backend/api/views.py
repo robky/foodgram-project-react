@@ -1,9 +1,12 @@
 from django.contrib.auth import get_user_model
 from rest_framework.viewsets import ModelViewSet
 
-from api.serializers import TagSerializer, UserSerializer
+from api.serializers import (TagSerializer, CustomUserSerializer,
+                             CreateUserSerializer)
 from foods.models import Tag
-from users.models import User
+
+
+User = get_user_model()
 
 
 class TagViewSet(ModelViewSet):
@@ -13,5 +16,9 @@ class TagViewSet(ModelViewSet):
 
 
 class UserViewSet(ModelViewSet):
-    serializer_class = UserSerializer
     queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateUserSerializer
+        return CustomUserSerializer

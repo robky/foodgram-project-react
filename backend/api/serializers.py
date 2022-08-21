@@ -1,6 +1,6 @@
-from djoser.serializers import UserSerializer
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework.generics import get_object_or_404
+from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
 from foods.models import Tag, User
@@ -12,7 +12,22 @@ class TagSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class CustomUserSerializer(UserSerializer):
+class CustomAuthTokenSerializer(ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+
+    class Meta:
+        model = User
+        fields = ('email', 'password')
+
+    def validate(self, attrs):
+        user = get_object_or_404(User, email=attrs['email'])
+        if not user.check_password(attrs['password']):
+            raise serializers.ValidationError(
+                {"password": "Неверный пароль."})
+        return attrs
+
+
+class CustomUserSerializer(ModelSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     def get_is_subscribed(self, obj):
@@ -24,7 +39,7 @@ class CustomUserSerializer(UserSerializer):
                   'is_subscribed')
 
 
-class CreateUserSerializer(UserSerializer):
+class CreateUserSerializer(ModelSerializer):
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())],
         required=True,
@@ -33,7 +48,7 @@ class CreateUserSerializer(UserSerializer):
     username = serializers.CharField(
         validators=[UniqueValidator(queryset=User.objects.all())],
         required=True,
-        max_length=150,
+        max_length=150
     )
     first_name = serializers.CharField(required=True, max_length=150)
     last_name = serializers.CharField(required=True, max_length=150)
@@ -53,3 +68,15 @@ class CreateUserSerializer(UserSerializer):
         user.last_name = validated_data['last_name']
         user.save()
         return user
+
+
+class SetPasswordSerializer(Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        user = self.initial_data['user']
+        if not user.check_password(attrs['current_password']):
+            raise serializers.ValidationError(
+                {"password": "Неверный пароль."})
+        return attrs

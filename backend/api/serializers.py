@@ -1,15 +1,39 @@
+from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
-from foods.models import Tag, User
+from foods.models import Tag, User, Ingredient, Recipe
 
 
 class TagSerializer(ModelSerializer):
     class Meta:
         model = Tag
         fields = "__all__"
+
+
+class IngredientSerializer(ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = "__all__"
+
+
+class RecipesSerializer(ModelSerializer):
+    author = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='username'
+    )
+    image = Base64ImageField(required=True)
+    tags = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='id',
+        many=True
+    )
+
+    class Meta:
+        model = Recipe
+        exclude = ("pub_date",)
 
 
 class CustomAuthTokenSerializer(ModelSerializer):

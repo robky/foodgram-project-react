@@ -1,17 +1,19 @@
 from django.contrib.auth import get_user_model
-from rest_framework import status, permissions
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, permissions, filters
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from api.permissions import PostOnlyOrAuthenticated
 from api.serializers import (TagSerializer, CustomUserSerializer,
                              CreateUserSerializer, CustomAuthTokenSerializer,
-                             SetPasswordSerializer)
-from foods.models import Tag
-
+                             SetPasswordSerializer, IngredientSerializer,
+                             RecipesSerializer)
+from foods.models import Tag, Ingredient, Recipe
 
 User = get_user_model()
 
@@ -20,6 +22,27 @@ class TagViewSet(ModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = None
+
+
+class IngredientViewSet(ModelViewSet):
+    serializer_class = IngredientSerializer
+    queryset = Ingredient.objects.all()
+    pagination_class = None
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['^name']
+
+
+class RecipeViewSet(ModelViewSet):
+    serializer_class = RecipesSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        # recipe_id = self.kwargs.get("id")
+        # recipe = get_object_or_404(Recipe, id=recipe_id)
+        return Recipe.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 
 class UserViewSet(ModelViewSet):

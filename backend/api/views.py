@@ -6,25 +6,25 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.permissions import PostOnlyOrAuthenticated
 from api.serializers import (TagSerializer, CustomUserSerializer,
                              CreateUserSerializer, CustomAuthTokenSerializer,
                              SetPasswordSerializer, IngredientSerializer,
-                             RecipesSerializer)
+                             RecipesSerializer, CreateRecipeSerializer)
 from foods.models import Tag, Ingredient, Recipe
 
 User = get_user_model()
 
 
-class TagViewSet(ModelViewSet):
+class TagViewSet(ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     pagination_class = None
 
 
-class IngredientViewSet(ModelViewSet):
+class IngredientViewSet(ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     queryset = Ingredient.objects.all()
     pagination_class = None
@@ -40,6 +40,11 @@ class RecipeViewSet(ModelViewSet):
         # recipe_id = self.kwargs.get("id")
         # recipe = get_object_or_404(Recipe, id=recipe_id)
         return Recipe.objects.all()
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateRecipeSerializer
+        return RecipesSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

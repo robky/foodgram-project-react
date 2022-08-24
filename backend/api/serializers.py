@@ -8,7 +8,7 @@ from foods.models import Tag, User, Ingredient, Recipe, IngredientRecipe
 
 
 class CustomAuthTokenSerializer(ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, )
 
     class Meta:
         model = User
@@ -37,17 +37,15 @@ class CustomUserSerializer(ModelSerializer):
 class CreateUserSerializer(ModelSerializer):
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())],
-        required=True,
         max_length=245,
     )
     username = serializers.CharField(
         validators=[UniqueValidator(queryset=User.objects.all())],
-        required=True,
         max_length=150
     )
-    first_name = serializers.CharField(required=True, max_length=150)
-    last_name = serializers.CharField(required=True, max_length=150)
-    password = serializers.CharField(write_only=True, required=True)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
@@ -66,8 +64,8 @@ class CreateUserSerializer(ModelSerializer):
 
 
 class SetPasswordSerializer(Serializer):
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
+    current_password = serializers.CharField()
+    new_password = serializers.CharField()
 
     def validate(self, attrs):
         user = self.initial_data['user']
@@ -90,6 +88,11 @@ class IngredientSerializer(ModelSerializer):
 
 
 class IngredientRecipeSerializer(ModelSerializer):
+    id = serializers.SlugRelatedField(
+        read_only=True,
+        slug_field='id',
+        source='ingredients'
+    )
     name = serializers.SlugRelatedField(
         read_only=True,
         slug_field='name',
@@ -110,37 +113,45 @@ class CreateRecipeSerializer(ModelSerializer):
     author = CustomUserSerializer(
         read_only=True,
     )
-    image = Base64ImageField(required=True)
+    image = Base64ImageField()
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),
-        required=True
+        
     )
-    name = serializers.CharField(required=True)
-    text = serializers.CharField(required=True)
-    cooking_time = serializers.IntegerField(min_value=1, required=True)
-    ingredients = IngredientRecipeSerializer(many=True, required=True)
-
-    is_favorited = serializers.BooleanField(read_only=True)
+    name = serializers.CharField()
+    text = serializers.CharField()
+    cooking_time = serializers.IntegerField(min_value=1, )
+    ingredients = IngredientRecipeSerializer(many=True, )
+    # is_favorited = serializers.HiddenField(default=None)
 
     class Meta:
         model = Recipe
         fields = ('author', 'name', 'image', 'text', 'cooking_time', 'tags',
-                  'ingredients', 'is_favorited')
+                  'ingredients',)
+                  # 'is_favorited')
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
+        tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
-            IngredientRecipe.objects.create(recipe=recipe, **ingredient_data)
+            ingredient = get_object_or_404(Ingredient, id=ingredient_data[
+                'id'])
+            IngredientRecipe.objects.create(recipe=recipe,
+                                            ingredients=ingredient,
+                                            amount=ingredient_data['amount'])
+        for tag_data in tags_data:
+            tag = get_object_or_404(Tag, id=tag_data)
+            recipe.tags.add(tag)
         return recipe
-
-    # def get_is_favorited(self, obj):
-    #     return True
 
 
 class RecipesSerializer(CreateRecipeSerializer):
-    tags = TagSerializer(required=True, many=True)
+    ingredients = IngredientRecipeSerializer(many=True)
+    tags = TagSerializer(many=True)
+    is_favorited = serializers.SerializerMethodField()
+
 
     def get_is_favorited(self, obj):
         return False

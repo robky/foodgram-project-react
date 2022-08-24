@@ -88,11 +88,6 @@ class IngredientSerializer(ModelSerializer):
 
 
 class IngredientRecipeSerializer(ModelSerializer):
-    id = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='id',
-        source='ingredients'
-    )
     name = serializers.SlugRelatedField(
         read_only=True,
         slug_field='name',
@@ -109,6 +104,15 @@ class IngredientRecipeSerializer(ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
+class CreateIngredientRecipeSerializer(ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+    )
+    class Meta:
+        model = IngredientRecipe
+        fields = ('id', 'amount')
+
+
 class CreateRecipeSerializer(ModelSerializer):
     author = CustomUserSerializer(
         read_only=True,
@@ -122,36 +126,32 @@ class CreateRecipeSerializer(ModelSerializer):
     name = serializers.CharField()
     text = serializers.CharField()
     cooking_time = serializers.IntegerField(min_value=1, )
-    ingredients = IngredientRecipeSerializer(many=True, )
-    # is_favorited = serializers.HiddenField(default=None)
+    ingredients = CreateIngredientRecipeSerializer(many=True, )
 
     class Meta:
         model = Recipe
         fields = ('author', 'name', 'image', 'text', 'cooking_time', 'tags',
                   'ingredients',)
-                  # 'is_favorited')
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
-            ingredient = get_object_or_404(Ingredient, id=ingredient_data[
-                'id'])
-            IngredientRecipe.objects.create(recipe=recipe,
-                                            ingredients=ingredient,
-                                            amount=ingredient_data['amount'])
+            IngredientRecipe.objects.create(
+                recipe=recipe,
+                ingredients=ingredient_data['id'],
+                amount=ingredient_data['amount'])
         for tag_data in tags_data:
-            tag = get_object_or_404(Tag, id=tag_data)
-            recipe.tags.add(tag)
+            recipe.tags.add(tag_data.id)
         return recipe
 
 
 class RecipesSerializer(CreateRecipeSerializer):
     ingredients = IngredientRecipeSerializer(many=True)
     tags = TagSerializer(many=True)
-    is_favorited = serializers.SerializerMethodField()
+    # is_favorited = serializers.SerializerMethodField()
 
 
-    def get_is_favorited(self, obj):
-        return False
+    # def get_is_favorited(self, obj):
+    #     return False

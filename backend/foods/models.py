@@ -58,6 +58,14 @@ class Recipe(models.Model):
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
 
+    def delete(self, *args, **kwargs):
+        # До удаления записи получаем необходимую информацию
+        storage, path = self.image.storage, self.image.path
+        # Удаляем сначала модель (объект)
+        super(Recipe, self).delete(*args, **kwargs)
+        # Потом удаляем сам файл
+        storage.delete(path)
+
     def __str__(self):
         return f'{self.name} - {self.author}'
 

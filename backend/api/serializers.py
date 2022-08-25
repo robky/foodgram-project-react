@@ -4,7 +4,8 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
-from foods.models import Tag, User, Ingredient, Recipe, IngredientRecipe
+from foods.models import Tag, User, Ingredient, Recipe, IngredientRecipe, \
+    ShoppingCart
 
 
 class CustomAuthTokenSerializer(ModelSerializer):
@@ -151,3 +152,35 @@ class GetRecipesSerializer(BaseRecipeSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         return obj.shopping_cart.all().count() > 0
+
+
+class ShoppingCartSerializer(ModelSerializer):
+    id = serializers.SlugRelatedField(
+        slug_field='id', source='recipe', read_only=True)
+    name = serializers.SlugRelatedField(
+        slug_field='name', source='recipe', read_only=True)
+    image = serializers.SerializerMethodField()
+    cooking_time = serializers.SlugRelatedField(
+        slug_field='cooking_time', source='recipe', read_only=True)
+
+    class Meta:
+        model = ShoppingCart
+        fields = ('id', 'name',
+                  'image',
+                  'cooking_time')
+
+    def validate(self, data):
+        if self.context["request"].method == "POST":
+            user = self.context["request"].user
+            my_view = self.context["view"]
+            recipe_id = my_view.kwargs.get("recipe_id")
+            recipe = get_object_or_404(Recipe, id=recipe_id)
+            if recipe.shopping_cart.filter(user=user).exists():
+                raise serializers.ValidationError(
+                    ["Рецепт уже есть в списке покупок"])
+        return data
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.recipe.image.url
+        return request.build_absolute_uri(image_url)

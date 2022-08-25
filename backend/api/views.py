@@ -12,7 +12,8 @@ from api.permissions import (PostOnlyOrAuthenticated, NicePersonOrReadOnly,
 from api.serializers import (TagSerializer, CustomUserSerializer,
                              CreateUserSerializer, CustomAuthTokenSerializer,
                              SetPasswordSerializer, IngredientSerializer,
-                             SetRecipeSerializer, GetRecipesSerializer)
+                             SetRecipeSerializer, GetRecipesSerializer,
+                             ShoppingCartSerializer)
 from foods.models import Tag, Ingredient, Recipe, IngredientRecipe
 
 User = get_user_model()
@@ -72,6 +73,8 @@ class RecipeViewSet(ModelViewSet):
             Recipe.objects.filter(id=recipe.id).update(
                 **serializer.validated_data)
             recipe = Recipe.objects.get(id=recipe.id)
+            recipe.image = serializer.validated_data['image']
+            recipe.save()
             IngredientRecipe.objects.filter(recipe=recipe).delete()
             for ingredient_data in ingredients_data:
                 IngredientRecipe.objects.create(
@@ -101,6 +104,24 @@ class UserViewSet(ModelViewSet):
         if self.action == "create":
             return CreateUserSerializer
         return CustomUserSerializer
+
+
+class ShoppingCartViewSet(ModelViewSet):
+    serializer_class = ShoppingCartSerializer
+    pagination_class = None
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_recipe(self):
+        recipe_id = self.kwargs.get("recipe_id")
+        return get_object_or_404(Recipe, id=recipe_id)
+
+    def get_queryset(self):
+        recipe = self.get_recipe()
+        return recipe.shopping_cart.all()
+
+    def perform_create(self, serializer):
+        recipe = self.get_recipe()
+        serializer.save(user=self.request.user, recipe=recipe)
 
 
 @api_view(['POST'])

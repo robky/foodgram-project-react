@@ -2,12 +2,13 @@ from django.contrib.auth import get_user_model
 from rest_framework import status, permissions, filters
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.permissions import PostOnlyOrAuthenticated, NicePersonOrReadOnly, \
-    NicePerson
+from api.permissions import (PostOnlyOrAuthenticated, NicePersonOrReadOnly,
+                             NicePerson)
 from api.serializers import (TagSerializer, CustomUserSerializer,
                              CreateUserSerializer, CustomAuthTokenSerializer,
                              SetPasswordSerializer, IngredientSerializer,
@@ -36,7 +37,12 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [NicePersonOrReadOnly]
 
-    def create_or_update(self, request, **kwargs):
+    # def get_permissions(self):
+    #     if self.action == "partial_update":
+    #         return (NicePerson,)
+    #     return super().get_permissions()
+
+    def create(self, request, *args, **kwargs):
         serializer = SetRecipeSerializer(data=request.data)
         if serializer.is_valid():
             ingredients_data = serializer.validated_data.pop('ingredients')
@@ -50,16 +56,41 @@ class RecipeViewSet(ModelViewSet):
                     amount=ingredient_data['amount'])
             for tag_data in tags_data:
                 recipe.tags.add(tag_data.id)
-            # recipe.save()
             serializer = GetRecipesSerializer(instance=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def create(self, request, **kwargs):
-        return self.create_or_update(request, **kwargs)
+    def update(self, request, *args, **kwargs):
+        serializer = SetRecipeSerializer(data=request.data)
+        # if serializer.instance.author != request.user:
+        #     raise PermissionDenied()
+        if serializer.is_valid():
+            ingredients_data = serializer.validated_data.pop('ingredients')
+            tags_data = serializer.validated_data.pop('tags')
+            recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+            self.check_object_permissions(self.request, recipe)
+            Recipe.objects.filter(id=recipe.id).update(
+                **serializer.validated_data)
+            recipe = Recipe.objects.get(id=recipe.id)
+            IngredientRecipe.objects.filter(recipe=recipe).delete()
+            for ingredient_data in ingredients_data:
+                IngredientRecipe.objects.create(
+                    recipe=recipe,
+                    ingredients=ingredient_data['id'],
+                    amount=ingredient_data['amount'])
+            recipe.tags.through.objects.filter(recipe=recipe).delete()
+            for tag_data in tags_data:
+                recipe.tags.add(tag_data.id)
+            serializer = GetRecipesSerializer(instance=recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def update(self, request, **kwargs):
-        return self.create_or_update(request, **kwargs)
+    def destroy(self, request, *args, **kwargs):
+        recipe = get_object_or_404(Recipe, id=kwargs['pk'])
+        self.check_object_permissions(self.request, recipe)
+        IngredientRecipe.objects.filter(recipe=recipe).delete()
+        recipe.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserViewSet(ModelViewSet):

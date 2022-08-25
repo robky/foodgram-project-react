@@ -108,50 +108,43 @@ class CreateIngredientRecipeSerializer(ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
     )
+
     class Meta:
         model = IngredientRecipe
         fields = ('id', 'amount')
 
 
-class CreateRecipeSerializer(ModelSerializer):
-    author = CustomUserSerializer(
-        read_only=True,
-    )
+class BaseRecipeSerializer(ModelSerializer):
     image = Base64ImageField()
-    tags = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Tag.objects.all(),
-        
-    )
     name = serializers.CharField()
     text = serializers.CharField()
     cooking_time = serializers.IntegerField(min_value=1, )
+
+
+class SetRecipeSerializer(BaseRecipeSerializer):
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tag.objects.all(),
+    )
     ingredients = CreateIngredientRecipeSerializer(many=True, )
 
     class Meta:
         model = Recipe
-        fields = ('author', 'name', 'image', 'text', 'cooking_time', 'tags',
+        fields = ('name', 'image', 'text', 'cooking_time', 'tags',
                   'ingredients',)
 
-    def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients')
-        tags_data = validated_data.pop('tags')
-        recipe = Recipe.objects.create(**validated_data)
-        for ingredient_data in ingredients_data:
-            IngredientRecipe.objects.create(
-                recipe=recipe,
-                ingredients=ingredient_data['id'],
-                amount=ingredient_data['amount'])
-        for tag_data in tags_data:
-            recipe.tags.add(tag_data.id)
-        return recipe
 
-
-class RecipesSerializer(CreateRecipeSerializer):
+class GetRecipesSerializer(BaseRecipeSerializer):
+    author = CustomUserSerializer(read_only=True)
     ingredients = IngredientRecipeSerializer(many=True)
     tags = TagSerializer(many=True)
-    # is_favorited = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Recipe
+        fields = ('id', 'author', 'name', 'image', 'text', 'cooking_time',
+                  'tags',
+                  'ingredients', 'is_favorited')
 
-    # def get_is_favorited(self, obj):
-    #     return False
+    def get_is_favorited(self, obj):
+        return 12345

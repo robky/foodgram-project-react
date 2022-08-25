@@ -1,19 +1,18 @@
 from django.contrib.auth import get_user_model
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, permissions, filters
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.permissions import PostOnlyOrAuthenticated
+from api.permissions import PostOnlyOrAuthenticated, NicePersonOrReadOnly, \
+    NicePerson
 from api.serializers import (TagSerializer, CustomUserSerializer,
                              CreateUserSerializer, CustomAuthTokenSerializer,
                              SetPasswordSerializer, IngredientSerializer,
-                             RecipesSerializer, CreateRecipeSerializer)
-from foods.models import Tag, Ingredient, Recipe
+                             SetRecipeSerializer, GetRecipesSerializer)
+from foods.models import Tag, Ingredient, Recipe, IngredientRecipe
 
 User = get_user_model()
 
@@ -33,21 +32,34 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
-    serializer_class = RecipesSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = GetRecipesSerializer
+    queryset = Recipe.objects.all()
+    permission_classes = [NicePersonOrReadOnly]
 
-    def get_queryset(self):
-        # recipe_id = self.kwargs.get("id")
-        # recipe = get_object_or_404(Recipe, id=recipe_id)
-        return Recipe.objects.all()
+    def create_or_update(self, request, **kwargs):
+        serializer = SetRecipeSerializer(data=request.data)
+        if serializer.is_valid():
+            ingredients_data = serializer.validated_data.pop('ingredients')
+            tags_data = serializer.validated_data.pop('tags')
+            recipe = Recipe.objects.create(author=request.user,
+                                           **serializer.validated_data)
+            for ingredient_data in ingredients_data:
+                IngredientRecipe.objects.create(
+                    recipe=recipe,
+                    ingredients=ingredient_data['id'],
+                    amount=ingredient_data['amount'])
+            for tag_data in tags_data:
+                recipe.tags.add(tag_data.id)
+            # recipe.save()
+            serializer = GetRecipesSerializer(instance=recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_serializer_class(self):
-        if self.action == "create":
-            return CreateRecipeSerializer
-        return RecipesSerializer
+    def create(self, request, **kwargs):
+        return self.create_or_update(request, **kwargs)
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    def update(self, request, **kwargs):
+        return self.create_or_update(request, **kwargs)
 
 
 class UserViewSet(ModelViewSet):

@@ -124,6 +124,8 @@ class ShoppingCartViewSet(ModelViewSet):
         serializer.save(user=self.request.user, recipe=recipe)
 
 
+
+
 @api_view(['POST'])
 def get_token(request):
     serializer = CustomAuthTokenSerializer(data=request.data)
@@ -162,3 +164,18 @@ def del_token(request):
     token, _ = Token.objects.get_or_create(user=request.user)
     token.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'POST', 'DELETE'])
+@permission_classes([NicePersonOrReadOnly])
+def shopping_cart(request, recipe_id):
+    recipe = get_object_or_404(Recipe, id=recipe_id)
+    if request.method == 'POST':
+        request.data['id'] = recipe.id
+        serializer = ShoppingCartSerializer(data=request.data, context={
+            'request': request})
+        if serializer.is_valid():
+            serializer.save(user=request.user, recipe=recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

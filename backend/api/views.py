@@ -57,7 +57,8 @@ class RecipeViewSet(ModelViewSet):
                     amount=ingredient_data['amount'])
             for tag_data in tags_data:
                 recipe.tags.add(tag_data.id)
-            serializer = GetRecipesSerializer(instance=recipe)
+            serializer = GetRecipesSerializer(instance=recipe, context={
+                'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -84,7 +85,8 @@ class RecipeViewSet(ModelViewSet):
             recipe.tags.through.objects.filter(recipe=recipe).delete()
             for tag_data in tags_data:
                 recipe.tags.add(tag_data.id)
-            serializer = GetRecipesSerializer(instance=recipe)
+            serializer = GetRecipesSerializer(instance=recipe, context={
+                'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -122,8 +124,6 @@ class ShoppingCartViewSet(ModelViewSet):
     def perform_create(self, serializer):
         recipe = self.get_recipe()
         serializer.save(user=self.request.user, recipe=recipe)
-
-
 
 
 @api_view(['POST'])

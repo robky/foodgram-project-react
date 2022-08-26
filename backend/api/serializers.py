@@ -1,11 +1,12 @@
+from django.core.files.storage import default_storage
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
-from foods.models import Tag, User, Ingredient, Recipe, IngredientRecipe, \
-    ShoppingCart
+from foods.models import (
+    Tag, User, Ingredient, Recipe, IngredientRecipe, ShoppingCart)
 
 
 class CustomAuthTokenSerializer(ModelSerializer):
@@ -116,13 +117,13 @@ class CreateIngredientRecipeSerializer(ModelSerializer):
 
 
 class BaseRecipeSerializer(ModelSerializer):
-    image = Base64ImageField()
     name = serializers.CharField()
     text = serializers.CharField()
     cooking_time = serializers.IntegerField(min_value=1, )
 
 
 class SetRecipeSerializer(BaseRecipeSerializer):
+    image = Base64ImageField()
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),
@@ -136,6 +137,7 @@ class SetRecipeSerializer(BaseRecipeSerializer):
 
 
 class GetRecipesSerializer(BaseRecipeSerializer):
+    image = serializers.SerializerMethodField()
     author = CustomUserSerializer(read_only=True)
     ingredients = IngredientRecipeSerializer(many=True)
     tags = TagSerializer(many=True)
@@ -146,6 +148,11 @@ class GetRecipesSerializer(BaseRecipeSerializer):
         model = Recipe
         fields = ('id', 'author', 'name', 'image', 'text', 'cooking_time',
                   'tags', 'ingredients', 'is_favorited', 'is_in_shopping_cart')
+
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.image.url
+        return request.build_absolute_uri(image_url)
 
     def get_is_favorited(self, obj):
         return obj.favorite.all().count() > 0
@@ -159,7 +166,7 @@ class ShoppingCartSerializer(ModelSerializer):
         slug_field='id', source='recipe', read_only=True)
     name = serializers.SlugRelatedField(
         slug_field='name', source='recipe', read_only=True)
-    image = serializers.ImageField(read_only=True)
+    image = serializers.SerializerMethodField()
     cooking_time = serializers.SlugRelatedField(
         slug_field='cooking_time', source='recipe', read_only=True)
 
@@ -179,7 +186,7 @@ class ShoppingCartSerializer(ModelSerializer):
                     ["Рецепт уже есть в списке покупок"])
         return data
 
-    # def get_image(self, obj):
-    #     request = self.context.get('request')
-    #     image_url = obj.recipe.image.url
-    #     return request.build_absolute_uri(image_url)
+    def get_image(self, obj):
+        request = self.context.get('request')
+        image_url = obj.recipe.image.url
+        return request.build_absolute_uri(image_url)

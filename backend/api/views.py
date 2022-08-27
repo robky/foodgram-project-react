@@ -14,7 +14,9 @@ from api.serializers import (TagSerializer, CustomUserSerializer,
                              SetPasswordSerializer, IngredientSerializer,
                              SetRecipeSerializer, GetRecipesSerializer,
                              ShoppingCartSerializer)
-from foods.models import Tag, Ingredient, Recipe, IngredientRecipe
+from core.pdf_engine import get_shopping_cart_pdf
+from foods.models import Tag, Ingredient, Recipe, IngredientRecipe, \
+    ShoppingCart
 
 User = get_user_model()
 
@@ -167,7 +169,7 @@ def del_token(request):
 
 
 @api_view(['GET', 'POST', 'DELETE'])
-@permission_classes([NicePersonOrReadOnly])
+@permission_classes([NicePerson])
 def shopping_cart(request, recipe_id):
     recipe = get_object_or_404(Recipe, id=recipe_id)
     if request.method == 'POST':
@@ -177,5 +179,14 @@ def shopping_cart(request, recipe_id):
         if serializer.is_valid():
             serializer.save(user=request.user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+    elif request.method == 'DELETE':
+        shopping_cart_recipe = get_object_or_404(
+            ShoppingCart, recipe=recipe, user=request.user)
+        shopping_cart_recipe.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    elif request.method == 'GET':
+        response = get_shopping_cart_pdf()
+        return response
+        # return Response({'result': 'ok'})
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum, F
 from rest_framework import status, permissions, filters
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -40,11 +40,6 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = [NicePersonOrReadOnly]
 
-    # def get_permissions(self):
-    #     if self.action == "partial_update":
-    #         return (NicePerson,)
-    #     return super().get_permissions()
-
     def create(self, request, *args, **kwargs):
         serializer = SetRecipeSerializer(data=request.data)
         if serializer.is_valid():
@@ -66,8 +61,6 @@ class RecipeViewSet(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         serializer = SetRecipeSerializer(data=request.data)
-        # if serializer.instance.author != request.user:
-        #     raise PermissionDenied()
         if serializer.is_valid():
             ingredients_data = serializer.validated_data.pop('ingredients')
             tags_data = serializer.validated_data.pop('tags')
@@ -110,22 +103,22 @@ class UserViewSet(ModelViewSet):
         return CustomUserSerializer
 
 
-class ShoppingCartViewSet(ModelViewSet):
-    serializer_class = ShoppingCartSerializer
-    pagination_class = None
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_recipe(self):
-        recipe_id = self.kwargs.get("recipe_id")
-        return get_object_or_404(Recipe, id=recipe_id)
-
-    def get_queryset(self):
-        recipe = self.get_recipe()
-        return recipe.shopping_cart.all()
-
-    def perform_create(self, serializer):
-        recipe = self.get_recipe()
-        serializer.save(user=self.request.user, recipe=recipe)
+# class ShoppingCartViewSet(ModelViewSet):
+#     serializer_class = ShoppingCartSerializer
+#     pagination_class = None
+#     permission_classes = [permissions.IsAuthenticated]
+#
+#     def get_recipe(self):
+#         recipe_id = self.kwargs.get("recipe_id")
+#         return get_object_or_404(Recipe, id=recipe_id)
+#
+#     def get_queryset(self):
+#         recipe = self.get_recipe()
+#         return recipe.shopping_cart.all()
+#
+#     def perform_create(self, serializer):
+#         recipe = self.get_recipe()
+#         serializer.save(user=self.request.user, recipe=recipe)
 
 
 @api_view(['POST'])
@@ -168,7 +161,7 @@ def del_token(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['GET', 'POST', 'DELETE'])
+@api_view(['POST', 'DELETE'])
 @permission_classes([NicePerson])
 def shopping_cart(request, recipe_id):
     recipe = get_object_or_404(Recipe, id=recipe_id)
@@ -179,14 +172,28 @@ def shopping_cart(request, recipe_id):
         if serializer.is_valid():
             serializer.save(user=request.user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
         shopping_cart_recipe = get_object_or_404(
             ShoppingCart, recipe=recipe, user=request.user)
         shopping_cart_recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    elif request.method == 'GET':
-        response = get_shopping_cart_pdf()
-        return response
-        # return Response({'result': 'ok'})
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([NicePerson])
+def download_shopping_cart(request):
+    s_cart_obj = ShoppingCart.objects.filter(user=request.user)
+    result = (
+        IngredientRecipe.objects
+            .filter(recipe__in=s_cart_obj.values('recipe'))
+            .select_related('ingredients')
+            .values(name=F('ingredients__name'),
+                    mu=F('ingredients__measurement_unit'))
+            .annotate(total=Sum('amount'))
+            .order_by('name'))
+    data = [[q['name'], q['mu'], q['total']] for q in result]
+    data.insert(0, ['Продукт', 'Ед.изм.', 'Кол-во'])
+    response = get_shopping_cart_pdf(data)
+    return response

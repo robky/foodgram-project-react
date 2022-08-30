@@ -17,7 +17,7 @@ from reportlab.platypus import Table, TableStyle, SimpleDocTemplate
 from reportlab.platypus.paragraph import Paragraph
 
 
-def get_shopping_cart_pdf():
+def get_shopping_cart_pdf(data: list):
     styles = getSampleStyleSheet()
     styles['Heading1'].fontName = 'DejaVuSansMono'
     styles['Heading2'].fontName = 'DejaVuSansMono'
@@ -47,14 +47,14 @@ def get_shopping_cart_pdf():
         '%d/%m/%Y %H:%M'), styles['Normal']))
     story.append(Paragraph('<br />\nСписок покупок:', styles['Heading1']))
 
-    data = [
-        ['Продукт', 'Ед.изм.', 'Кол-во'],
-        ['Шпроты', 'банка', '36'],
-        ['Огурцы', 'шт', '5346'],
-        ['Молоко', 'л', '2']
-    ]
+    # data = [
+    #     ['Продукт', 'Ед.изм.', 'Кол-во'],
+    #     ['Шпроты', 'банка', '36'],
+    #     ['Огурцы', 'шт', '5346'],
+    #     ['Молоко', 'л', '2']
+    # ]
 
-    table = Table(data, colWidths=[12 * cm, 3 * cm, 3 * cm])
+    table = Table(data, colWidths=[12.5 * cm, 2.5 * cm, 3 * cm])
 
     table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, 0), 'CENTRE'),

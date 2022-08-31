@@ -1,12 +1,3 @@
-from django.contrib.auth import get_user_model
-from django.db.models import F, Sum
-from rest_framework import filters, permissions, status
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import get_object_or_404
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-
 from api.permissions import (NicePerson, NicePersonOrReadOnly,
                              PostOnlyOrAuthenticated)
 from api.serializers import (CreateUserSerializer, CustomAuthTokenSerializer,
@@ -15,8 +6,16 @@ from api.serializers import (CreateUserSerializer, CustomAuthTokenSerializer,
                              SetRecipeSerializer, ShoppingCartSerializer,
                              TagSerializer)
 from core.pdf_engine import get_shopping_cart_pdf
+from django.contrib.auth import get_user_model
+from django.db.models import F, Sum
 from foods.models import (Ingredient, IngredientRecipe, Recipe, ShoppingCart,
                           Tag)
+from rest_framework import filters, permissions, status
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 User = get_user_model()
 

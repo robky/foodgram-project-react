@@ -1,11 +1,10 @@
 from drf_base64.fields import Base64ImageField
+from foods.models import (Ingredient, IngredientRecipe, Recipe, ShoppingCart,
+                          Tag, User)
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
-
-from foods.models import (Ingredient, IngredientRecipe, Recipe, ShoppingCart,
-                          Tag, User)
 
 
 class CustomAuthTokenSerializer(ModelSerializer):

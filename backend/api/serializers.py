@@ -1,26 +1,26 @@
-from django.core.files.storage import default_storage
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
-from foods.models import (
-    Tag, User, Ingredient, Recipe, IngredientRecipe, ShoppingCart)
+from foods.models import (Ingredient, IngredientRecipe, Recipe, ShoppingCart,
+                          Tag, User)
 
 
 class CustomAuthTokenSerializer(ModelSerializer):
-    password = serializers.CharField(write_only=True, )
+    password = serializers.CharField(
+        write_only=True,
+    )
 
     class Meta:
         model = User
-        fields = ('email', 'password')
+        fields = ("email", "password")
 
     def validate(self, attrs):
-        user = get_object_or_404(User, email=attrs['email'])
-        if not user.check_password(attrs['password']):
-            raise serializers.ValidationError(
-                {"password": "Неверный пароль."})
+        user = get_object_or_404(User, email=attrs["email"])
+        if not user.check_password(attrs["password"]):
+            raise serializers.ValidationError({"password": "Неверный пароль."})
         return attrs
 
 
@@ -32,8 +32,14 @@ class CustomUserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name',
-                  'is_subscribed')
+        fields = (
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "is_subscribed",
+        )
 
 
 class CreateUserSerializer(ModelSerializer):
@@ -43,7 +49,7 @@ class CreateUserSerializer(ModelSerializer):
     )
     username = serializers.CharField(
         validators=[UniqueValidator(queryset=User.objects.all())],
-        max_length=150
+        max_length=150,
     )
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
@@ -51,16 +57,24 @@ class CreateUserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name',
-                  'password')
+        fields = (
+            "id",
+            "email",
+            "username",
+            "first_name",
+            "last_name",
+            "password",
+        )
 
     def create(self, validated_data):
-        user = User.objects.create_user(validated_data['username'],
-                                        validated_data['email'],
-                                        validated_data['password'])
+        user = User.objects.create_user(
+            validated_data["username"],
+            validated_data["email"],
+            validated_data["password"],
+        )
 
-        user.first_name = validated_data['first_name']
-        user.last_name = validated_data['last_name']
+        user.first_name = validated_data["first_name"]
+        user.last_name = validated_data["last_name"]
         user.save()
         return user
 
@@ -70,10 +84,9 @@ class SetPasswordSerializer(Serializer):
     new_password = serializers.CharField()
 
     def validate(self, attrs):
-        user = self.initial_data['user']
-        if not user.check_password(attrs['current_password']):
-            raise serializers.ValidationError(
-                {"password": "Неверный пароль."})
+        user = self.initial_data["user"]
+        if not user.check_password(attrs["current_password"]):
+            raise serializers.ValidationError({"password": "Неверный пароль."})
         return attrs
 
 
@@ -91,19 +104,15 @@ class IngredientSerializer(ModelSerializer):
 
 class IngredientRecipeSerializer(ModelSerializer):
     name = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='name',
-        source='ingredients'
+        read_only=True, slug_field="name", source="ingredients"
     )
     measurement_unit = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='measurement_unit',
-        source='ingredients'
+        read_only=True, slug_field="measurement_unit", source="ingredients"
     )
 
     class Meta:
         model = IngredientRecipe
-        fields = ('id', 'name', 'measurement_unit', 'amount')
+        fields = ("id", "name", "measurement_unit", "amount")
 
 
 class CreateIngredientRecipeSerializer(ModelSerializer):
@@ -113,13 +122,15 @@ class CreateIngredientRecipeSerializer(ModelSerializer):
 
     class Meta:
         model = IngredientRecipe
-        fields = ('id', 'amount')
+        fields = ("id", "amount")
 
 
 class BaseRecipeSerializer(ModelSerializer):
     name = serializers.CharField()
     text = serializers.CharField()
-    cooking_time = serializers.IntegerField(min_value=1, )
+    cooking_time = serializers.IntegerField(
+        min_value=1,
+    )
 
 
 class SetRecipeSerializer(BaseRecipeSerializer):
@@ -128,12 +139,20 @@ class SetRecipeSerializer(BaseRecipeSerializer):
         many=True,
         queryset=Tag.objects.all(),
     )
-    ingredients = CreateIngredientRecipeSerializer(many=True, )
+    ingredients = CreateIngredientRecipeSerializer(
+        many=True,
+    )
 
     class Meta:
         model = Recipe
-        fields = ('name', 'image', 'text', 'cooking_time', 'tags',
-                  'ingredients',)
+        fields = (
+            "name",
+            "image",
+            "text",
+            "cooking_time",
+            "tags",
+            "ingredients",
+        )
 
 
 class GetRecipesSerializer(BaseRecipeSerializer):
@@ -146,11 +165,21 @@ class GetRecipesSerializer(BaseRecipeSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'author', 'name', 'image', 'text', 'cooking_time',
-                  'tags', 'ingredients', 'is_favorited', 'is_in_shopping_cart')
+        fields = (
+            "id",
+            "author",
+            "name",
+            "image",
+            "text",
+            "cooking_time",
+            "tags",
+            "ingredients",
+            "is_favorited",
+            "is_in_shopping_cart",
+        )
 
     def get_image(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         image_url = obj.image.url
         return request.build_absolute_uri(image_url)
 
@@ -163,30 +192,32 @@ class GetRecipesSerializer(BaseRecipeSerializer):
 
 class ShoppingCartSerializer(ModelSerializer):
     id = serializers.SlugRelatedField(
-        slug_field='id', source='recipe', read_only=True)
+        slug_field="id", source="recipe", read_only=True
+    )
     name = serializers.SlugRelatedField(
-        slug_field='name', source='recipe', read_only=True)
+        slug_field="name", source="recipe", read_only=True
+    )
     image = serializers.SerializerMethodField()
     cooking_time = serializers.SlugRelatedField(
-        slug_field='cooking_time', source='recipe', read_only=True)
+        slug_field="cooking_time", source="recipe", read_only=True
+    )
 
     class Meta:
         model = ShoppingCart
-        fields = ('id', 'name',
-                  'image',
-                  'cooking_time')
+        fields = ("id", "name", "image", "cooking_time")
 
     def validate(self, data):
         if self.context["request"].method == "POST":
             user = self.context["request"].user
-            recipe_id = self.context["request"].data['id']
+            recipe_id = self.context["request"].data["id"]
             recipe = get_object_or_404(Recipe, id=recipe_id)
             if recipe.shopping_cart.filter(user=user).exists():
                 raise serializers.ValidationError(
-                    ["Рецепт уже есть в списке покупок"])
+                    ["Рецепт уже есть в списке покупок"]
+                )
         return data
 
     def get_image(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         image_url = obj.recipe.image.url
         return request.build_absolute_uri(image_url)

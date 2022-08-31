@@ -9,8 +9,8 @@ from .models import User
 class MyAdmin(UserAdmin):
     # fields = ('name', 'first_name', 'email',)
     search_fields = ("email__startswith", "first_name__startswith")
-    list_filter = ('email', 'first_name')
-    list_display = ('username', 'first_name', 'last_name', 'email')
+    list_filter = ("email", "first_name")
+    list_display = ("username", "first_name", "last_name", "email")
 
 
 admin.site.unregister(Group)

@@ -6,8 +6,7 @@ from django.core.management import BaseCommand
 
 from foods import models
 
-
-DIR_CSV = os.path.join(settings.BASE_DIR, '..', 'data/')
+DIR_CSV = os.path.join(settings.BASE_DIR, "..", "data/")
 
 print(DIR_CSV)
 

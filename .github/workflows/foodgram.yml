@@ -22,7 +22,7 @@ jobs:
         pip install -r ./backend/requirements.txt 
     - name: Test with flake8 and django tests
       run: |
-        python -m flake8
+        python -m ./backend/flake8
         python ./backend/manage.py check
   
   build_and_push_to_docker_hub:
@@ -57,7 +57,7 @@ jobs:
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.PASSPHRASE }}
-        source: "docker-compose.yml,nginx.conf"
+        source: "./deploy/docker-compose.yml,./deploy/nginx.conf"
         target: "~"
         script: |
           sudo docker-compose stop

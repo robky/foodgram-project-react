@@ -1,25 +1,24 @@
 from django.contrib import admin
 
-from .models import (Tag, Subscription, Recipe, Ingredient,
-                     IngredientRecipe, Favorite, ShoppingCart)
+from .models import (Favorite, Ingredient, IngredientRecipe, Recipe,
+                     ShoppingCart, Subscription, Tag)
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'number_favorites')
-    list_filter = ('author', 'name', 'tags')
+    list_display = ("name", "author", "number_favorites")
+    list_filter = ("author", "name", "tags")
 
     def number_favorites(self, obj):
-        result = Favorite.objects.filter(recipe=obj).count()
-        return result
+        return Favorite.objects.filter(recipe=obj).count()
 
     number_favorites.short_description = "Количество в избранном"
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'measurement_unit')
-    list_filter = ('name', )
+    list_display = ("name", "measurement_unit")
+    list_filter = ("name",)
 
 
 @admin.register(Tag, IngredientRecipe, Favorite, ShoppingCart, Subscription)

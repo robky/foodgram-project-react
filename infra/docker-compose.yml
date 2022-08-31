@@ -1,5 +1,13 @@
 version: '3.8'
 services:
+  db:
+    image: postgres:14.5-alpine
+    restart: always
+    volumes:
+      - /var/lib/postgresql/data/
+    env_file:
+      - ./.env
+
   web:
     build: ../backend
     restart: always
@@ -7,9 +15,10 @@ services:
       - static_value:/app/static/
       - media_value:/app/media/
     depends_on:
-      - nginx
+      - db
     env_file:
       - ./.env
+    entrypoint: ./entrypoint.sh
 
   frontend:
     build:
@@ -17,6 +26,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
+    depends_on:
+      - web
 
   nginx:
     image: nginx:1.21.3-alpine

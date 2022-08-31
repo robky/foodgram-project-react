@@ -3,7 +3,6 @@ from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -63,12 +62,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE',
+                                default='django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', default='postgres'),
+            'USER': os.getenv('POSTGRES_USER', default='postgres'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='postgres'),
+            'HOST': os.getenv('DB_HOST', default='postgres'),
+            'PORT': os.getenv('DB_PORT', default=5432)
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -100,7 +112,6 @@ if DEBUG:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 else:
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

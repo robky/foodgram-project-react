@@ -1,3 +1,12 @@
+from django.contrib.auth import get_user_model
+from django.db.models import F, Sum
+from rest_framework import filters, permissions, status
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+
 from api.permissions import (NicePerson, NicePersonOrReadOnly,
                              PostOnlyOrAuthenticated)
 from api.serializers import (CreateUserSerializer, CustomAuthTokenSerializer,
@@ -6,16 +15,8 @@ from api.serializers import (CreateUserSerializer, CustomAuthTokenSerializer,
                              SetRecipeSerializer, ShoppingCartSerializer,
                              TagSerializer)
 from core.pdf_engine import get_shopping_cart_pdf
-from django.contrib.auth import get_user_model
-from django.db.models import F, Sum
-from foods.models import (Ingredient, IngredientRecipe, Recipe, ShoppingCart,
-                          Tag, Favorite)
-from rest_framework import filters, permissions, status
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import get_object_or_404
-from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
+from foods.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
+                          ShoppingCart, Tag)
 
 User = get_user_model()
 
@@ -43,18 +44,20 @@ class RecipeViewSet(ModelViewSet):
     permission_classes = [NicePersonOrReadOnly]
 
     def get_queryset(self):
-        queryset = Recipe.objects.prefetch_related('author', 'tags')
+        queryset = Recipe.objects.prefetch_related("author", "tags")
         if self.request.method == "GET" and self.request.user.is_authenticated:
-            if self.request.query_params.get('is_favorited'):
-                favorit_obj = Favorite.objects.filter(
-                    user=self.request.user)
+            if self.request.query_params.get("is_favorited"):
+                favorit_obj = Favorite.objects.filter(user=self.request.user)
                 queryset = queryset.filter(
-                    id__in=favorit_obj.values("recipe_id"))
-            if self.request.query_params.get('is_in_shopping_cart'):
+                    id__in=favorit_obj.values("recipe_id")
+                )
+            if self.request.query_params.get("is_in_shopping_cart"):
                 s_cart_obj = ShoppingCart.objects.filter(
-                    user=self.request.user)
+                    user=self.request.user
+                )
                 queryset = queryset.filter(
-                    id__in=s_cart_obj.values("recipe_id"))
+                    id__in=s_cart_obj.values("recipe_id")
+                )
         return queryset
 
     def create(self, request, *args, **kwargs):

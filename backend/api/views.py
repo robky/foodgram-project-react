@@ -10,10 +10,10 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from api.permissions import (NicePerson, NicePersonOrReadOnly,
                              PostOnlyOrAuthenticated)
 from api.serializers import (CreateUserSerializer, CustomAuthTokenSerializer,
-                             CustomUserSerializer, GetRecipesSerializer,
-                             IngredientSerializer, SetPasswordSerializer,
-                             SetRecipeSerializer, ShoppingCartSerializer,
-                             TagSerializer)
+                             CustomUserSerializer, FavoriteSerializer,
+                             GetRecipesSerializer, IngredientSerializer,
+                             SetPasswordSerializer, SetRecipeSerializer,
+                             ShoppingCartSerializer, TagSerializer)
 from core.pdf_engine import get_shopping_cart_pdf
 from foods.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                           ShoppingCart, Tag)
@@ -237,3 +237,25 @@ def download_shopping_cart(request):
     data = [[q["name"], q["mu"], q["total"]] for q in result]
     data.insert(0, ["Продукт", "Ед.изм.", "Кол-во"])
     return get_shopping_cart_pdf(data)
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes([NicePerson])
+def favorite(request, recipe_id):
+    recipe = get_object_or_404(Recipe, id=recipe_id)
+    if request.method == "POST":
+        request.data["id"] = recipe.id
+        serializer = FavoriteSerializer(
+            data=request.data, context={"request": request}
+        )
+        if serializer.is_valid():
+            serializer.save(user=request.user, recipe=recipe)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == "DELETE":
+        favorite = get_object_or_404(
+            Favorite, recipe=recipe, user=request.user
+        )
+        favorite.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(status=status.HTTP_400_BAD_REQUEST)

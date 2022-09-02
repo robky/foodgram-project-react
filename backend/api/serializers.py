@@ -4,8 +4,8 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework.validators import UniqueValidator
 
-from foods.models import (Ingredient, IngredientRecipe, Recipe, ShoppingCart,
-                          Tag, User)
+from foods.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
+                          ShoppingCart, Tag, User)
 
 
 class CustomAuthTokenSerializer(ModelSerializer):
@@ -190,7 +190,7 @@ class GetRecipesSerializer(BaseRecipeSerializer):
         return obj.shopping_cart.all().exists()
 
 
-class ShoppingCartSerializer(ModelSerializer):
+class GeneralSerializer(ModelSerializer):
     id = serializers.SlugRelatedField(
         slug_field="id", source="recipe", read_only=True
     )
@@ -202,6 +202,13 @@ class ShoppingCartSerializer(ModelSerializer):
         slug_field="cooking_time", source="recipe", read_only=True
     )
 
+    def get_image(self, obj):
+        request = self.context.get("request")
+        image_url = obj.recipe.image.url
+        return request.build_absolute_uri(image_url)
+
+
+class ShoppingCartSerializer(GeneralSerializer):
     class Meta:
         model = ShoppingCart
         fields = ("id", "name", "image", "cooking_time")
@@ -217,7 +224,19 @@ class ShoppingCartSerializer(ModelSerializer):
                 )
         return data
 
-    def get_image(self, obj):
-        request = self.context.get("request")
-        image_url = obj.recipe.image.url
-        return request.build_absolute_uri(image_url)
+
+class FavoriteSerializer(GeneralSerializer):
+    class Meta:
+        model = Favorite
+        fields = ("id", "name", "image", "cooking_time")
+
+    def validate(self, data):
+        if self.context["request"].method == "POST":
+            user = self.context["request"].user
+            recipe_id = self.context["request"].data["id"]
+            recipe = get_object_or_404(Recipe, id=recipe_id)
+            if recipe.favorite.filter(user=user).exists():
+                raise serializers.ValidationError(
+                    ["Рецепт уже есть в избранном"]
+                )
+        return data

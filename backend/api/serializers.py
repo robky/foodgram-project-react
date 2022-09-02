@@ -183,10 +183,10 @@ class GetRecipesSerializer(BaseRecipeSerializer):
         return request.build_absolute_uri(image_url)
 
     def get_is_favorited(self, obj):
-        return obj.favorite.all().count() > 0
+        return obj.favorite.all().exists()
 
     def get_is_in_shopping_cart(self, obj):
-        return obj.shopping_cart.all().count() > 0
+        return obj.shopping_cart.all().exists()
 
 
 class ShoppingCartSerializer(ModelSerializer):

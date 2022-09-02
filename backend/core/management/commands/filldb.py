@@ -3,6 +3,7 @@ from csv import DictReader
 
 from django.conf import settings
 from django.core.management import BaseCommand
+
 from foods import models
 
 DIR_CSV = os.path.join(settings.BASE_DIR, "..", "data/")

@@ -45,19 +45,30 @@ class RecipeViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = Recipe.objects.prefetch_related("author", "tags")
-        if self.request.method == "GET" and self.request.user.is_authenticated:
-            if self.request.query_params.get("is_favorited"):
-                favorit_obj = Favorite.objects.filter(user=self.request.user)
-                queryset = queryset.filter(
-                    id__in=favorit_obj.values("recipe_id")
-                )
-            if self.request.query_params.get("is_in_shopping_cart"):
-                s_cart_obj = ShoppingCart.objects.filter(
-                    user=self.request.user
-                )
-                queryset = queryset.filter(
-                    id__in=s_cart_obj.values("recipe_id")
-                )
+        params = self.request.query_params
+        if self.request.method == "GET":
+            tags = params.getlist("tags")
+            if tags:
+                queryset = queryset.filter(tags__slug__in=tags).distinct()
+            if params.get("author"):
+                author = get_object_or_404(User, id=params.get("author"))
+                queryset = queryset.filter(author=author)
+
+            if self.request.user.is_authenticated:
+                if params.get("is_favorited"):
+                    favorit_obj = Favorite.objects.filter(
+                        user=self.request.user
+                    )
+                    queryset = queryset.filter(
+                        id__in=favorit_obj.values("recipe_id")
+                    )
+                if params.get("is_in_shopping_cart"):
+                    s_cart_obj = ShoppingCart.objects.filter(
+                        user=self.request.user
+                    )
+                    queryset = queryset.filter(
+                        id__in=s_cart_obj.values("recipe_id")
+                    )
         return queryset
 
     def create(self, request, *args, **kwargs):

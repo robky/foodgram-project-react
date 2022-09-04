@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import F, Sum
 from rest_framework import filters, permissions, status
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -13,10 +13,11 @@ from api.serializers import (CreateUserSerializer, CustomAuthTokenSerializer,
                              CustomUserSerializer, FavoriteSerializer,
                              GetRecipesSerializer, IngredientSerializer,
                              SetPasswordSerializer, SetRecipeSerializer,
-                             ShoppingCartSerializer, TagSerializer)
+                             ShoppingCartSerializer, SubscriptionSerializer,
+                             TagSerializer)
 from core.pdf_engine import get_shopping_cart_pdf
 from foods.models import (Favorite, Ingredient, IngredientRecipe, Recipe,
-                          ShoppingCart, Tag)
+                          ShoppingCart, Subscription, Tag)
 
 User = get_user_model()
 
@@ -139,23 +140,57 @@ class UserViewSet(ModelViewSet):
             return CreateUserSerializer
         return CustomUserSerializer
 
+    @action(detail=False, methods=["get"])
+    def subscriptions(self, request):
+        subscriders = User.objects.filter(
+            id__in=request.user.subscriber.all().values("author_id")
+        )
 
-# class ShoppingCartViewSet(ModelViewSet):
-#     serializer_class = ShoppingCartSerializer
-#     pagination_class = None
-#     permission_classes = [permissions.IsAuthenticated]
-#
-#     def get_recipe(self):
-#         recipe_id = self.kwargs.get("recipe_id")
-#         return get_object_or_404(Recipe, id=recipe_id)
-#
-#     def get_queryset(self):
-#         recipe = self.get_recipe()
-#         return recipe.shopping_cart.all()
-#
-#     def perform_create(self, serializer):
-#         recipe = self.get_recipe()
-#         serializer.save(user=self.request.user, recipe=recipe)
+        page = self.paginate_queryset(subscriders)
+        if page is not None:
+            serializer = SubscriptionSerializer(
+                page, many=True, context={"request": request}
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = SubscriptionSerializer(
+            subscriders, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["post", "delete"],
+        permission_classes=[NicePerson],
+    )
+    def subscribe(self, request, pk=None):
+        user = request.user
+        author = get_object_or_404(User, id=pk)
+        request.data["author_id"] = pk
+        serializer = SubscriptionSerializer(
+            data=request.data, context={"request": request}
+        )
+        if request.method == "POST" and serializer.is_valid():
+            Subscription.objects.create(user=user, author=author)
+            serializer = SubscriptionSerializer(
+                instance=author, context={"request": request}
+            )
+            return Response(serializer.data)
+        if request.method == "DELETE":
+            subscribe = get_object_or_404(
+                Subscription, user=user, author=author
+            )
+            subscribe.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubscriptionViewSet(ReadOnlyModelViewSet):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [NicePerson]
+
+    def get_queryset(self):
+        return Subscription.objects.all(user=self.request.user)
 
 
 @api_view(["POST"])

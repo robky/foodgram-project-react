@@ -179,10 +179,16 @@ class GetRecipesSerializer(BaseRecipeSerializer):
         return request.build_absolute_uri(image_url)
 
     def get_is_favorited(self, obj):
-        return obj.favorite.all().exists()
+        if self.context['request'].user.is_authenticated:
+            user = self.context['request'].user
+            return user.voter.filter(recipe=obj).exists()
+        return False
 
     def get_is_in_shopping_cart(self, obj):
-        return obj.shopping_cart.all().exists()
+        if self.context['request'].user.is_authenticated:
+            user = self.context['request'].user
+            return user.basket_owner.filter(recipe=obj).exists()
+        return False
 
 
 class GeneralSerializer(ModelSerializer):

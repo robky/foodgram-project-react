@@ -6,6 +6,7 @@ from .models import (Favorite, Ingredient, IngredientRecipe, Recipe,
 
 class IngreditntsDetailsInline(admin.StackedInline):
     model = IngredientRecipe
+    min_num = 1
 
 
 @admin.register(Recipe)

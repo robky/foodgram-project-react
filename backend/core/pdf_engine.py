@@ -23,8 +23,7 @@ def get_shopping_cart_pdf(data: list):
     registerFont(
         TTFont(
             "DejaVuSansMono",
-            (f"{settings.BASE_DIR}{settings.STATIC_URL}"
-             f"/font/DejaVuSansMono.ttf"),
+            (f"{settings.BASE_DIR}{settings.STATIC_URL}" f"/font/DejaVuSansMono.ttf"),
             "UTF-8",
         )
     )
@@ -79,17 +78,10 @@ def get_shopping_cart_pdf(data: list):
     story.append(drawing2)
 
     address_name = "foodgram-project-react"
-    address = (
-        '<link href="'
-        + "https://github.com/robky/foodgram-project-react"
-        + '">'
-        + address_name
-        + "</link>"
-    )
+    address = '<link href="' + "https://github.com/robky/foodgram-project-react" + '">' + address_name + "</link>"
     story.append(
         Paragraph(
-            "<br />\nДанный файл подготовлен в рамках учебного проекта: "
-            + address,
+            "<br />\nДанный файл подготовлен в рамках учебного проекта: " + address,
             styles["Heading2"],
         )
     )
@@ -97,6 +89,4 @@ def get_shopping_cart_pdf(data: list):
     doc.build(story)
     buffer.seek(0)
 
-    return FileResponse(
-        buffer, as_attachment=True, filename="shopping_cart.pdf"
-    )
+    return FileResponse(buffer, as_attachment=True, filename="shopping_cart.pdf")

@@ -43,15 +43,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        db_index=True, max_length=50, verbose_name="Название"
-                    ),
+                    models.CharField(db_index=True, max_length=50, verbose_name="Название"),
                 ),
                 (
                     "measurement_unit",
-                    models.CharField(
-                        max_length=20, verbose_name="Единица измерения"
-                    ),
+                    models.CharField(max_length=20, verbose_name="Единица измерения"),
                 ),
             ],
             options={
@@ -74,11 +70,7 @@ class Migration(migrations.Migration):
                 (
                     "amount",
                     models.SmallIntegerField(
-                        validators=[
-                            django.core.validators.MinValueValidator(
-                                1, "Количество не может быть меньше 1"
-                            )
-                        ],
+                        validators=[django.core.validators.MinValueValidator(1, "Количество не может быть меньше 1")],
                         verbose_name="Количество",
                     ),
                 ),
@@ -106,27 +98,21 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "image",
-                    models.ImageField(
-                        upload_to="recipes/", verbose_name="Картинка"
-                    ),
+                    models.ImageField(upload_to="recipes/", verbose_name="Картинка"),
                 ),
                 ("text", models.TextField(verbose_name="Описание")),
                 (
                     "cooking_time",
                     models.SmallIntegerField(
                         validators=[
-                            django.core.validators.MinValueValidator(
-                                1, "Время приготовления не может быть меньше 1"
-                            )
+                            django.core.validators.MinValueValidator(1, "Время приготовления не может быть меньше 1")
                         ],
                         verbose_name="Время приготовления (в минутах)",
                     ),
                 ),
                 (
                     "pub_date",
-                    models.DateTimeField(
-                        auto_now_add=True, verbose_name="Дата публикации"
-                    ),
+                    models.DateTimeField(auto_now_add=True, verbose_name="Дата публикации"),
                 ),
             ],
             options={
@@ -185,9 +171,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        max_length=100, unique=True, verbose_name="Название"
-                    ),
+                    models.CharField(max_length=100, unique=True, verbose_name="Название"),
                 ),
                 (
                     "color",

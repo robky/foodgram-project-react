@@ -98,12 +98,8 @@ class IngredientSerializer(ModelSerializer):
 
 
 class IngredientRecipeSerializer(ModelSerializer):
-    name = serializers.SlugRelatedField(
-        read_only=True, slug_field="name", source="ingredients"
-    )
-    measurement_unit = serializers.SlugRelatedField(
-        read_only=True, slug_field="measurement_unit", source="ingredients"
-    )
+    name = serializers.SlugRelatedField(read_only=True, slug_field="name", source="ingredients")
+    measurement_unit = serializers.SlugRelatedField(read_only=True, slug_field="measurement_unit", source="ingredients")
 
     class Meta:
         model = IngredientRecipe
@@ -192,16 +188,10 @@ class GetRecipesSerializer(BaseRecipeSerializer):
 
 
 class GeneralSerializer(ModelSerializer):
-    id = serializers.SlugRelatedField(
-        slug_field="id", source="recipe", read_only=True
-    )
-    name = serializers.SlugRelatedField(
-        slug_field="name", source="recipe", read_only=True
-    )
+    id = serializers.SlugRelatedField(slug_field="id", source="recipe", read_only=True)
+    name = serializers.SlugRelatedField(slug_field="name", source="recipe", read_only=True)
     image = serializers.SerializerMethodField()
-    cooking_time = serializers.SlugRelatedField(
-        slug_field="cooking_time", source="recipe", read_only=True
-    )
+    cooking_time = serializers.SlugRelatedField(slug_field="cooking_time", source="recipe", read_only=True)
 
     def get_image(self, obj):
         request = self.context.get("request")
@@ -220,9 +210,7 @@ class ShoppingCartSerializer(GeneralSerializer):
             recipe_id = self.context["request"].data["id"]
             recipe = get_object_or_404(Recipe, id=recipe_id)
             if recipe.shopping_cart.filter(user=user).exists():
-                raise serializers.ValidationError(
-                    ["Рецепт уже есть в списке покупок"]
-                )
+                raise serializers.ValidationError(["Рецепт уже есть в списке покупок"])
         return data
 
 
@@ -237,9 +225,7 @@ class FavoriteSerializer(GeneralSerializer):
             recipe_id = self.context["request"].data["id"]
             recipe = get_object_or_404(Recipe, id=recipe_id)
             if recipe.favorite.filter(user=user).exists():
-                raise serializers.ValidationError(
-                    ["Рецепт уже есть в избранном"]
-                )
+                raise serializers.ValidationError(["Рецепт уже есть в избранном"])
         return data
 
 
@@ -284,11 +270,7 @@ class SubscriptionSerializer(CustomUserSerializer):
             author_id = self.context["request"].data["author_id"]
             author = get_object_or_404(User, id=author_id)
             if user == author:
-                raise serializers.ValidationError(
-                    ["Нельзя подписаться на самого себя"]
-                )
+                raise serializers.ValidationError(["Нельзя подписаться на самого себя"])
             if author.subscribed.filter(user=user).exists():
-                raise serializers.ValidationError(
-                    ["Вы уже подписаны на этого автора"]
-                )
+                raise serializers.ValidationError(["Вы уже подписаны на этого автора"])
         return data

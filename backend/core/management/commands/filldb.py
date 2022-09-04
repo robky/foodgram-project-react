@@ -64,13 +64,8 @@ class Command(BaseCommand):
                                     in_csv["m2m_field_child"],
                                 )
                             else:
-                                write_to_model(
-                                    row, model, in_csv["inst_fields"]
-                                )
+                                write_to_model(row, model, in_csv["inst_fields"])
                             count += 1
                         except Exception as error:
                             print(error)
-                    self.stdout.write(
-                        f"в таблицу {model.__name__} вставлено "
-                        f"{count} записей"
-                    )
+                    self.stdout.write(f"в таблицу {model.__name__} вставлено " f"{count} записей")

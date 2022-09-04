@@ -14,7 +14,7 @@ class Ingredient(models.Model):
         verbose_name_plural = "Ингридиенты"
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.measurement_unit})"
 
 
 class Tag(models.Model):
@@ -38,9 +38,7 @@ class Recipe(models.Model):
         verbose_name="Автор",
     )
     name = models.CharField("Название", max_length=100)
-    image = models.ImageField(
-        "Картинка", upload_to="recipes/"
-    )  # Приходит, закодированная в Base64
+    image = models.ImageField("Картинка", upload_to="recipes/")
     text = models.TextField("Описание")
     cooking_time = models.SmallIntegerField(
         "Время приготовления (в минутах)",
@@ -57,11 +55,8 @@ class Recipe(models.Model):
         verbose_name_plural = "Рецепты"
 
     def delete(self, *args, **kwargs):
-        # До удаления записи получаем необходимую информацию
         storage, path = self.image.storage, self.image.path
-        # Удаляем сначала модель (объект)
         super(Recipe, self).delete(*args, **kwargs)
-        # Потом удаляем сам файл
         storage.delete(path)
 
     def __str__(self):

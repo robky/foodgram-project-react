@@ -12,7 +12,8 @@ class IngreditntsDetailsInline(admin.StackedInline):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ("name", "author", "number_favorites")
-    list_filter = ("author", "name", "tags")
+    search_fields = ("author", "name")
+    list_filter = ("author", "tags")
     inlines = [IngreditntsDetailsInline]
 
     def number_favorites(self, obj):
@@ -24,7 +25,7 @@ class RecipeAdmin(admin.ModelAdmin):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ("name", "measurement_unit")
-    list_filter = ("name",)
+    search_fields = ("name",)
 
 
 @admin.register(Tag, Favorite, ShoppingCart, Subscription)

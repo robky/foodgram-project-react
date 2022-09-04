@@ -12,3 +12,6 @@ class User(AbstractUser):
 
     def recipes_count(self):
         return self.recipes.all().count()
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"

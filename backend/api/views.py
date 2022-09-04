@@ -133,14 +133,17 @@ class RecipeViewSet(ModelViewSet):
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = [PostOnlyOrAuthenticated]
 
     def get_serializer_class(self):
         if self.action == "create":
             return CreateUserSerializer
         return CustomUserSerializer
 
-    @action(detail=False, methods=["get"])
+    @action(
+        detail=False,
+        methods=["get"],
+        permission_classes=[PostOnlyOrAuthenticated],
+    )
     def subscriptions(self, request):
         subscriders = User.objects.filter(
             id__in=request.user.subscriber.all().values("author_id")

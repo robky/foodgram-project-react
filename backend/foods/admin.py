@@ -4,10 +4,15 @@ from .models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                      ShoppingCart, Subscription, Tag)
 
 
+class IngreditntsDetailsInline(admin.StackedInline):
+    model = IngredientRecipe
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ("name", "author", "number_favorites")
     list_filter = ("author", "name", "tags")
+    inlines = [IngreditntsDetailsInline]
 
     def number_favorites(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
@@ -21,6 +26,6 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = ("name",)
 
 
-@admin.register(Tag, IngredientRecipe, Favorite, ShoppingCart, Subscription)
+@admin.register(Tag, Favorite, ShoppingCart, Subscription)
 class FoodsAdmin(admin.ModelAdmin):
     pass

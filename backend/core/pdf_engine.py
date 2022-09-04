@@ -23,7 +23,8 @@ def get_shopping_cart_pdf(data: list):
     registerFont(
         TTFont(
             "DejaVuSansMono",
-            f"{settings.BASE_DIR}{settings.STATIC_URL}/DejaVuSansMono.ttf",
+            (f"{settings.BASE_DIR}{settings.STATIC_URL}"
+             f"/font/DejaVuSansMono.ttf"),
             "UTF-8",
         )
     )

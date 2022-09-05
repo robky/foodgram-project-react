@@ -106,6 +106,7 @@ class IngredientSerializer(ModelSerializer):
 
 
 class IngredientRecipeSerializer(ModelSerializer):
+    id = serializers.SlugRelatedField(read_only=True, slug_field="id", source="ingredients")
     name = serializers.SlugRelatedField(read_only=True, slug_field="name", source="ingredients")
     measurement_unit = serializers.SlugRelatedField(read_only=True, slug_field="measurement_unit", source="ingredients")
 

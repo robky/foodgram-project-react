@@ -25,6 +25,8 @@ class CustomAuthTokenSerializer(ModelSerializer):
 
 
 class CustomUserSerializer(ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -35,6 +37,12 @@ class CustomUserSerializer(ModelSerializer):
             "last_name",
             "is_subscribed",
         )
+
+    def get_is_subscribed(self, obj):
+        if self.context["request"].user.is_authenticated:
+            user = self.context["request"].user
+            return user.subscriber.filter(author=obj).exists()
+        return False
 
 
 class CreateUserSerializer(ModelSerializer):

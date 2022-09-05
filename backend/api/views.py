@@ -181,7 +181,7 @@ def get_token(request):
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def get_users_me(request):
-    serializer = CustomUserSerializer(request.user)
+    serializer = CustomUserSerializer(request.user, context={"request": request})
     return Response(serializer.data)
 
 

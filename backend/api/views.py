@@ -65,7 +65,7 @@ class RecipeViewSet(ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        serializer = SetRecipeSerializer(data=request.data)
+        serializer = SetRecipeSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             ingredients_data = serializer.validated_data.pop("ingredients")
             tags_data = serializer.validated_data.pop("tags")
@@ -83,7 +83,7 @@ class RecipeViewSet(ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
-        serializer = SetRecipeSerializer(data=request.data)
+        serializer = SetRecipeSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             ingredients_data = serializer.validated_data.pop("ingredients")
             tags_data = serializer.validated_data.pop("tags")
@@ -91,7 +91,8 @@ class RecipeViewSet(ModelViewSet):
             self.check_object_permissions(self.request, recipe)
             Recipe.objects.filter(id=recipe.id).update(**serializer.validated_data)
             recipe = Recipe.objects.get(id=recipe.id)
-            recipe.image = serializer.validated_data["image"]
+            if serializer.validated_data.get("image"):
+                recipe.image = serializer.validated_data["image"]
             recipe.save()
             IngredientRecipe.objects.filter(recipe=recipe).delete()
             for ingredient_data in ingredients_data:

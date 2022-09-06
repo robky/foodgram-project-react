@@ -1,3 +1,4 @@
+from django.utils.translation import ugettext_lazy
 from drf_base64.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
@@ -134,7 +135,7 @@ class BaseRecipeSerializer(ModelSerializer):
 
 
 class SetRecipeSerializer(BaseRecipeSerializer):
-    image = Base64ImageField()
+    image = Base64ImageField(required=False)
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),
@@ -153,6 +154,12 @@ class SetRecipeSerializer(BaseRecipeSerializer):
             "tags",
             "ingredients",
         )
+
+    def validate(self, data):
+        if self.context["request"].method == "POST" and not data.get('image'):
+            raise serializers.ValidationError(
+                {'image': ugettext_lazy('Ни одного файла не было отправлено.')})
+        return data
 
 
 class GetRecipesSerializer(BaseRecipeSerializer):

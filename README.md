@@ -9,9 +9,12 @@ password: 1234
 ```
 
 ### Технологии
-Python 3.7
-Django 3.2.15
-Django Rest Framework 3.13.1
+Python
+Django
+Rest Framework Postgresql
+Nginx
+Docker-compose
+Github Actions (tests, push to docker hub, deploy)
 
 ![example branch parameter](https://github.com/robky/foodgram-project-react/actions/workflows/foodgram.yml/badge.svg)
 
@@ -32,7 +35,7 @@ mv ./infra/.env.example ./infra/.env
 
 Заполнить файл .env актуальными данными согласно примера.
 
-Запустить контейнер
+Запустить контейнеры
 
 ```
 docker-compose up -d --build

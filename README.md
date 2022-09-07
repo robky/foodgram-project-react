@@ -27,7 +27,7 @@ Github Actions (tests, push to docker hub, deploy)
 
 ```
 git clone https://github.com/robky/foodgram-project-react.git
-cd yamdb_final
+cd foodgram-project-react
 ```
 
 Переименовать файл .env.example
